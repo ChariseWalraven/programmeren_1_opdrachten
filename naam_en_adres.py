@@ -5,9 +5,8 @@ straatdres = input('wat is je straatadres (inclusief huisnr)?')
 stad_postcode = input('wat is je stad en postcode?')
 
 
-res = f"""Voornaam: {voornaam}
-Achternaam: {achternaam}
-Straatadres: {straatdres}
-Stad en postcode: {stad_postcode}"""
+res = f"""{voornaam} {achternaam}
+{straatdres}
+{stad_postcode}"""
 
 print(res)
