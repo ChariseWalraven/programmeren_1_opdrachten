@@ -8,6 +8,8 @@ class UserInputError(ValueError):
     pass
 
 
+# TODO: replace regular array interactions with numpy
+# TODO: find winner
 
 # TODO: replace with enums and emoji's 🤠
 const_symbols = ["X", "O"]
