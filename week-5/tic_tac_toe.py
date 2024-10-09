@@ -11,6 +11,7 @@ class UserInputError(ValueError):
 
 # TODO: replace with enums and emoji's 🤠
 const_symbols = ["X", "O"]
+const_board_size = (3, 3)
 
 
 class StrSymbols(StrEnum):
@@ -29,12 +30,11 @@ class SymbolValues(IntEnum):
 
 
 def init():
-    global board
-    board = np.array([[0 for i in range(3)] for i in range(3)])
     introduction()
+    return np.zeros(const_board_size)
 
 
-def run_game():
+def run_game(board):
     try:
         no_winner = True
         while no_winner:
@@ -120,5 +120,5 @@ def three_in_a_row(board):
 
 
 if __name__ == "__main__":
-    init()
-    run_game()
+    board = init()
+    run_game(board)
