@@ -92,15 +92,18 @@ def update_board(position, value, board):
 
 
 def print_board(board):
+    def get_display_symbol(value):
+        display = " "
+        if value == SymbolValues.X:
+            display = DisplaySymbols.X
+        elif value == SymbolValues.O:
+            display = DisplaySymbols.O
+        return display
+
     print("  Board:", "=" * 9, sep="\n")
     for r in board:
         for c in r:
-            display = " "
-            if c == SymbolValues.X:
-                display = DisplaySymbols.X
-            elif c == SymbolValues.O:
-                display = DisplaySymbols.O
-
+            display = get_display_symbol(c)
             print(
                 "[",
                 display,
