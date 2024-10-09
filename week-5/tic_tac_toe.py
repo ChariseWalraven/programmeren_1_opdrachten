@@ -3,6 +3,12 @@
 import numpy as np
 from enum import StrEnum, IntEnum, auto
 
+
+class UserInputError(ValueError):
+    pass
+
+
+
 # TODO: replace with enums and emoji's 🤠
 const_symbols = ["X", "O"]
 
@@ -32,13 +38,15 @@ def run_game():
     try:
         no_winner = True
         while no_winner:
-            # take user input
-            # play row
-            row, col, value = get_user_input()
-            global board
-            board = update_board((row, col), value, board)
-            print_board(board)
-
+            try:
+                # take user input
+                row, col, value = get_user_input()
+                # play row
+                board = update_board((row, col), value, board)
+                print_board(board)
+            except UserInputError as e:
+                print(e)
+                continue
     except KeyboardInterrupt:
         print("\nQuit game.")
 
@@ -61,15 +69,16 @@ def validate_user_input(row, col, value, board):
     # row & col already taken?
     try:
         if board[row][col] in const_symbols:
-            raise ValueError("Position already taken, try another one.")
+            raise UserInputError("Position already taken, try another one.")
     except IndexError:
-        raise ValueError(
+        raise UserInputError(
             "Invalid position entered, "
-            "please enter a row and column number between 0 and 2"
+            "please enter a row and column number between 1 "
+            f"and {len(const_board_size) + 1}"
         )
 
     if value not in const_symbols:
-        raise ValueError(
+        raise UserInputError(
             'Invalid input, please enter either "X" or "O", '
             "no other symbols are permitted."
         )
