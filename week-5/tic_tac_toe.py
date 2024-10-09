@@ -58,8 +58,8 @@ def introduction():
 
 
 def get_user_input():
-    row = int(input("Enter row: "))
-    col = int(input("Enter column: "))
+    row = int(input("Enter row: ")) - 1
+    col = int(input("Enter column: ")) - 1
     value = input("Enter X or O (case insenstitive): ").upper()
 
     validate_user_input(row, col, value, board)
