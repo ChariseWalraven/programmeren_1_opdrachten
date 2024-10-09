@@ -68,7 +68,7 @@ def get_user_input():
 
 
 def validate_user_input(row, col, value, board):
-    # row & col already taken?
+    # BUG: can change cells that have already been played
     try:
         if board[row][col] in const_symbols:
             raise UserInputError("Position already taken, try another one.")
