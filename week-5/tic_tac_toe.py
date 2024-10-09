@@ -123,4 +123,5 @@ def three_in_a_row(board):
 
 if __name__ == "__main__":
     board = init()
+    print_board(board)
     run_game(board)
