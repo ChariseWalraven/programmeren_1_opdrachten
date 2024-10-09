@@ -8,10 +8,6 @@ class UserInputError(ValueError):
     pass
 
 
-# TODO: replace regular array interactions with numpy
-# TODO: find winner
-
-
 class StrSymbols(StrEnum):
     X = "X"
     O = "O"  # noqa: E741
