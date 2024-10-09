@@ -46,6 +46,7 @@ def run_game(board):
                 # play row
                 board = update_board((row, col), value, board)
                 print_board(board)
+                print("winner? ", three_in_a_row(board))
             except UserInputError as e:
                 print(e)
                 continue
