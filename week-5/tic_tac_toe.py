@@ -1,7 +1,7 @@
 # https://brightspace.hr.nl/d2l/lms/dropbox/user/folder_submit_files.d2l?db=53694&grpid=0&isprv=0&bp=0&ou=111528
 # TODO: Use numpy 🤓
 import numpy as np
-from enum import StrEnum, IntEnum, auto
+from enum import StrEnum, IntEnum
 
 
 class UserInputError(ValueError):
@@ -11,14 +11,10 @@ class UserInputError(ValueError):
 # TODO: replace regular array interactions with numpy
 # TODO: find winner
 
-# TODO: replace with enums and emoji's 🤠
-const_symbols = ["X", "O"]
-const_board_size = (3, 3)
-
 
 class StrSymbols(StrEnum):
-    X = auto()
-    O = auto()  # noqa: E741
+    X = "X"
+    O = "O"  # noqa: E741
 
 
 class DisplaySymbols(StrEnum):
@@ -31,6 +27,12 @@ class SymbolValues(IntEnum):
     O = 1  # noqa: E741
 
 
+# TODO: replace with enums and emoji's 🤠
+const_symbol_strings = [s.value for s in StrSymbols]
+const_symbol_values = [s.value for s in SymbolValues]
+const_board_size = (3, 3)
+
+
 def init():
     introduction()
     return np.zeros(const_board_size)
@@ -38,18 +40,32 @@ def init():
 
 def run_game(board):
     try:
-        no_winner = True
-        while no_winner:
+        winner = False
+        while not winner:
             try:
                 # take user input
                 row, col, value = get_user_input()
                 # play row
                 board = update_board((row, col), value, board)
                 print_board(board)
-                print("winner? ", three_in_a_row(board))
+
+                row_winner = three_in_a_row(board)
+                diagonal_winner = three_in_a_row(
+                    np.array(
+                        [
+                            np.diagonal(np.fliplr(board)).tolist(),
+                            np.diagonal(board).tolist(),
+                        ]
+                    )
+                )
+                col_winner = three_in_a_row(np.rot90(board))
+                winner = row_winner or col_winner or diagonal_winner
             except UserInputError as e:
                 print(e)
                 continue
+        else:
+            if winner:
+                print('Congratulations, you won!')
     except KeyboardInterrupt:
         print("\nQuit game.")
 
@@ -71,7 +87,7 @@ def get_user_input():
 def validate_user_input(row, col, value, board):
     # BUG: can change cells that have already been played
     try:
-        if board[row][col] in const_symbols:
+        if board[row][col] in const_symbol_values:
             raise UserInputError("Position already taken, try another one.")
     except IndexError:
         raise UserInputError(
@@ -80,7 +96,7 @@ def validate_user_input(row, col, value, board):
             f"and {len(const_board_size) + 1}"
         )
 
-    if value not in const_symbols:
+    if value not in const_symbol_strings:
         raise UserInputError(
             'Invalid input, please enter either "X" or "O", '
             "no other symbols are permitted."
@@ -119,7 +135,8 @@ def print_board(board):
 
 
 def three_in_a_row(board):
-    return any((sum(row) in {3, -3} for row in board))
+    sums = (sum(row) in {3, -3} for row in board)
+    return any(sums)
 
 
 if __name__ == "__main__":
