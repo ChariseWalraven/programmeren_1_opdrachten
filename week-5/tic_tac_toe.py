@@ -3,6 +3,9 @@
 import numpy as np
 from enum import StrEnum, IntEnum
 
+# TODO: implement turns
+# TODO: implement random bot? Or just copy pasta from ur previous project?
+
 
 class UserInputError(ValueError):
     pass
@@ -37,6 +40,7 @@ def init():
 def run_game(board):
     try:
         winner = False
+        player_turn = True
         while not winner:
             try:
                 # take user input
@@ -56,6 +60,7 @@ def run_game(board):
                 )
                 col_winner = three_in_a_row(np.rot90(board))
                 winner = row_winner or col_winner or diagonal_winner
+                player_turn = False
             except UserInputError as e:
                 print(e)
                 continue
@@ -78,6 +83,13 @@ def get_user_input():
     validate_user_input(row, col, value, board)
 
     return row, col, value
+
+
+def get_bot_input(board):
+    # pick a random coordinate from the list of untaken coordinates
+    # get list of free spots
+    pass
+    # choose one
 
 
 def validate_user_input(row, col, value, board):
