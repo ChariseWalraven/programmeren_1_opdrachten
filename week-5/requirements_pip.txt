@@ -1,0 +1,5 @@
+certifi==2024.8.30
+numpy @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_ccwg1dk_sy/croot/numpy_and_numpy_base_1728047646234/work/dist/numpy-2.1.1-cp312-cp312-macosx_11_0_arm64.whl#sha256=e88b4f057c8a704be5dded417ad78791b69d18fb7229f611cd77a2e889985027
+playsound3==2.2.2
+setuptools==72.1.0
+wheel==0.44.0
