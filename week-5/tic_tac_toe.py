@@ -1,12 +1,9 @@
 # https://brightspace.hr.nl/d2l/lms/dropbox/user/folder_submit_files.d2l?db=53694&grpid=0&isprv=0&bp=0&ou=111528
-# TODO: Use numpy 🤓
 import numpy as np
 from enum import StrEnum, IntEnum
 
-# TODO: implement turns
-# TODO: implement random bot? Or just copy pasta from ur previous project?
 
-
+# region - errors & enums
 class UserInputError(ValueError):
     pass
 
@@ -26,73 +23,151 @@ class SymbolValues(IntEnum):
     O = 1  # noqa: E741
 
 
-# TODO: replace with enums and emoji's 🤠
+# endregion
+
+
+# region - constants
 const_symbol_strings = [s.value for s in StrSymbols]
 const_symbol_values = [s.value for s in SymbolValues]
-const_board_size = (3, 3)
+# endregion - constants
+
+# region - config
+config_board_size = (3, 3)
+config_player_symbol = None
+config_bot_symbol = None
+# endregion
 
 
+# region - lib methods
+def get_symbol_string_from_input(input):
+    str_symbol = [symbol for symbol in StrSymbols if symbol == input]
+    return str_symbol[0] if len(str_symbol) > 0 else None
+
+
+def allow_quitting(game_loop_fn):
+    """Decorator. When user presses ctrl + c, prints message confirming
+    that game has quit.
+    Meant to be used with game loop to avoid nesting from
+    try...except statements.
+    """
+
+    def inner_fn(*args):
+        try:
+            game_loop_fn(*args)
+        except KeyboardInterrupt:
+            print("\nQuit game.")
+
+    return inner_fn
+
+
+def clear_screen():
+    print("\033c")
+
+# endregion
+
+
+# region - general methods
 def init():
     introduction()
-    return np.zeros(const_board_size)
-
-
-def run_game(board):
-    try:
-        winner = False
-        player_turn = True
-        while not winner:
-            try:
-                # take user input
-                row, col, value = get_user_input()
-                # play row
-                board = update_board((row, col), value, board)
-                print_board(board)
-
-                row_winner = three_in_a_row(board)
-                diagonal_winner = three_in_a_row(
-                    np.array(
-                        [
-                            np.diagonal(np.fliplr(board)).tolist(),
-                            np.diagonal(board).tolist(),
-                        ]
-                    )
-                )
-                col_winner = three_in_a_row(np.rot90(board))
-                winner = row_winner or col_winner or diagonal_winner
-                player_turn = False
-            except UserInputError as e:
-                print(e)
-                continue
-        else:
-            if winner:
-                print('Congratulations, you won!')
-    except KeyboardInterrupt:
-        print("\nQuit game.")
+    set_player_symbol()
+    set_bot_symbol()
+    return np.zeros(config_board_size)  # init board
 
 
 def introduction():
     print("Welcome to tic tac toe! To quit, press ctrl + c anytime.")
 
 
-def get_user_input():
-    row = int(input("Enter row: ")) - 1
-    col = int(input("Enter column: ")) - 1
-    value = input("Enter X or O (case insenstitive): ").upper()
+def get_turn(player_turn, board):
+    if player_turn:
+        print("Your play:")
+        value = config_player_symbol.value
+        # take user input
+        row, col = get_user_input()
+        player_turn = False
+    else:
+        print("Bot play:")
+        # get bot input
+        row, col = get_bot_play(board)
+        value = config_bot_symbol.value
+        player_turn = True
+    return row, col, value, player_turn
 
-    validate_user_input(row, col, value, board)
 
-    return row, col, value
+@allow_quitting
+def run_game(board):
+    winner = False
+    draw = False
+    player_turn = True
+    print("Player goes first.")
+    while not winner and not draw:
+        row, col, value = (None, None, None)
+        try:
+            row, col, value, player_turn = get_turn(player_turn, board)
+        except UserInputError as e:
+            print(e)
+            continue
+        # play row
+        clear_screen()
+        board = update_board((row, col), value, board)
+        print_board(board)
+
+        winner = check_winner(board)
+        draw = check_draw(board)
+    else:
+        if winner and not player_turn:
+            print("Congratulations, you won!")
+        elif winner and player_turn:
+            print("Beaten by the bot! Surrender to your robot overlords! 🤖")
+        elif draw:
+            print("It's a draw. Better luck next time.")
 
 
-def get_bot_input(board):
-    # pick a random coordinate from the list of untaken coordinates
+# endregion
+
+
+# region - bot methods
+def get_bot_play(board):
     # get list of free spots
-    pass
+    free_cells = np.argwhere(board == 0)
+    # pick a random coordinate from the list of untaken coordinates
+    play_idx = np.random.choice(free_cells.shape[0], 1)
+    play = free_cells[play_idx][0]
     # choose one
+    return play
 
 
-def validate_user_input(row, col, value, board):
+def set_bot_symbol():
+    global config_player_symbol, config_bot_symbol
+    # get remaining symbol
+    config_bot_symbol = [s for s in StrSymbols if s != config_player_symbol][0]
+
+
+# endregion
+
+
+# region - user input & input validation methods
+def set_player_symbol():
+    global config_player_symbol
+    symbol = input("Choose a symbol: enter 'X' or 'O'").upper()
+    validate_user_symbol(symbol)
+    config_player_symbol = get_symbol_string_from_input(symbol)
+
+
+def get_user_input():
+    row = input("Enter row: ")
+    col = input("Enter column: ")
+    validate_user_position(row, col)
+    # sub 1 to get index
+    row = int(row) - 1
+    col = int(col) - 1
+    validate_user_input(row, col, board)
+
+    return row, col
+
+
+def validate_user_input(row: str, col: str, board):
+
     try:
         if board[row][col] in const_symbol_values:
             raise UserInputError("Position already taken, try another one.")
@@ -100,23 +175,33 @@ def validate_user_input(row, col, value, board):
         raise UserInputError(
             "Invalid position entered, "
             "please enter a row and column number between 1 "
-            f"and {len(const_board_size) + 1}"
+            f"and {len(config_board_size) + 1}"
         )
 
-    if value not in const_symbol_strings:
+
+def validate_user_symbol(symbol):
+    if symbol not in const_symbol_strings:
         raise UserInputError(
             'Invalid input, please enter either "X" or "O", '
             "no other symbols are permitted."
         )
 
 
-def update_board(position, value, board):
-    row, col = position
-    board[row][col] = SymbolValues[value]
+def validate_user_position(row: str, col: str):
+    """Raises a UserInputError if the row or col are not integers"""
+    try:
+        int(row)
+        int(col)
+    except ValueError:
+        raise UserInputError(
+            "Invalid row or column position.",
+        )
 
-    return board
+
+# endregion
 
 
+# region - board methods
 def print_board(board):
     def get_display_symbol(value):
         display = " "
@@ -141,9 +226,42 @@ def print_board(board):
     print("=" * 9)
 
 
+def update_board(position, value, board):
+    row, col = position
+    board[row][col] = SymbolValues[value]
+
+    return board
+
+
+# endregion
+
+
+# region - victory methods
+def check_winner(board):
+    row_winner = three_in_a_row(board)
+    diagonal_winner = three_in_a_row(
+        np.array(
+            [
+                np.diagonal(np.fliplr(board)).tolist(),
+                np.diagonal(board).tolist(),
+            ]
+        )
+    )
+    col_winner = three_in_a_row(np.rot90(board))
+    return row_winner or col_winner or diagonal_winner
+
+
+def check_draw(board):
+    # if no more free spaces then it's a draw
+    return len(np.argwhere(board == 0)) == 0
+
+
 def three_in_a_row(board):
     sums = (sum(row) in {3, -3} for row in board)
     return any(sums)
+
+
+# endregion
 
 
 if __name__ == "__main__":
