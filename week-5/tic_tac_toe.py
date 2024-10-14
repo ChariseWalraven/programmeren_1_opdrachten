@@ -1,6 +1,8 @@
 # https://brightspace.hr.nl/d2l/lms/dropbox/user/folder_submit_files.d2l?db=53694&grpid=0&isprv=0&bp=0&ou=111528
 import numpy as np
+
 from enum import StrEnum, IntEnum
+from playsound3 import playsound
 
 
 # region - errors & enums
@@ -23,12 +25,30 @@ class SymbolValues(IntEnum):
     O = 1  # noqa: E741
 
 
+class SfxUrls(StrEnum):
+    __base_url__ = "https://raw.githubusercontent.com/ChariseWalraven/tic_tac_toe_sfx/refs/heads/main"  # noqa: E501
+    player_win = f"{__base_url__}/player_win.mp3"
+    player_lose = f"{__base_url__}/player_lose.mp3"
+    player_draw = f"{__base_url__}/player_draw.mp3"
+
+
 # endregion
 
 
 # region - constants
 const_symbol_strings = [s.value for s in StrSymbols]
 const_symbol_values = [s.value for s in SymbolValues]
+const_board_display_symbols = [
+    "1️⃣ ",
+    "2️⃣ ",
+    "3️⃣ ",
+    "4️⃣ ",
+    "5️⃣ ",
+    "6️⃣ ",
+    "7️⃣ ",
+    "8️⃣ ",
+    "9️⃣ ",
+]
 # endregion - constants
 
 # region - config
@@ -63,6 +83,7 @@ def allow_quitting(game_loop_fn):
 def clear_screen():
     print("\033c")
 
+
 # endregion
 
 
@@ -83,10 +104,9 @@ def get_turn(player_turn, board):
         print("Your play:")
         value = config_player_symbol.value
         # take user input
-        row, col = get_user_input()
+        row, col = get_user_input(board)
         player_turn = False
     else:
-        print("Bot play:")
         # get bot input
         row, col = get_bot_play(board)
         value = config_bot_symbol.value
@@ -109,6 +129,15 @@ def run_game(board):
             continue
         # play row
         clear_screen()
+        bot_display_symbol = DisplaySymbols[config_bot_symbol]
+        (
+            print(
+                f"Bot played an {bot_display_symbol}",
+                f"in position: {get_pos_from_row_col(row, col, board)}",
+            )
+            if player_turn
+            else None
+        )
         board = update_board((row, col), value, board)
         print_board(board)
 
@@ -117,10 +146,13 @@ def run_game(board):
     else:
         if winner and not player_turn:
             print("Congratulations, you won!")
+            playsound(SfxUrls.player_win)
         elif winner and player_turn:
             print("Beaten by the bot! Surrender to your robot overlords! 🤖")
+            playsound(SfxUrls.player_lose)
         elif draw:
             print("It's a draw. Better luck next time.")
+            playsound(SfxUrls.player_draw)
 
 
 # endregion
@@ -154,16 +186,23 @@ def set_player_symbol():
     config_player_symbol = get_symbol_string_from_input(symbol)
 
 
-def get_user_input():
-    row = input("Enter row: ")
-    col = input("Enter column: ")
-    validate_user_position(row, col)
-    # sub 1 to get index
-    row = int(row) - 1
-    col = int(col) - 1
+def get_user_input(board):
+    position = input("Enter position: ")
+    validate_user_position(position)
+    row, col = get_row_col_from_pos(int(position), board)
     validate_user_input(row, col, board)
 
     return row, col
+
+
+def get_row_col_from_pos(position: int, board):
+    coord = np.argwhere(board > -2)[position - 1]
+
+    return coord[0], coord[1]
+
+
+def get_pos_from_row_col(row: int, col: int, board):
+    return (col + row * 3) + 1
 
 
 def validate_user_input(row: str, col: str, board):
@@ -187,12 +226,15 @@ def validate_user_symbol(symbol):
         )
 
 
-def validate_user_position(row: str, col: str):
-    """Raises a UserInputError if the row or col are not integers"""
+def validate_user_position(pos: str):
+    """
+    Raises a UserInputError if the position is not an integer or
+    is out of bounds
+    """
     try:
-        int(row)
-        int(col)
-    except ValueError:
+        pos = int(pos)
+        assert pos > 0 and pos < 10
+    except (AssertionError, ValueError):
         raise UserInputError(
             "Invalid row or column position.",
         )
@@ -203,8 +245,8 @@ def validate_user_position(row: str, col: str):
 
 # region - board methods
 def print_board(board):
-    def get_display_symbol(value):
-        display = " "
+    def get_display_symbol(value, pos):
+        display = const_board_display_symbols[pos - 1]
         if value == SymbolValues.X:
             display = DisplaySymbols.X
         elif value == SymbolValues.O:
@@ -212,9 +254,10 @@ def print_board(board):
         return display
 
     print("  Board:", "=" * 9, sep="\n")
-    for r in board:
-        for c in r:
-            display = get_display_symbol(c)
+    for r_i, r in enumerate(board):
+        for c_i, c in enumerate(r):
+            pos = get_pos_from_row_col(r_i, c_i, board)
+            display = get_display_symbol(c, pos)
             print(
                 "[",
                 display,
@@ -264,7 +307,17 @@ def three_in_a_row(board):
 # endregion
 
 
+@allow_quitting
+def main():
+    playing = True
+    while playing:
+        board = init()
+        print_board(board)
+        run_game(board)
+        play_again = input("Do you want to play again? (y/n)")
+        if play_again == "n":
+            playing = False
+
+
 if __name__ == "__main__":
-    board = init()
-    print_board(board)
-    run_game(board)
+    main()
